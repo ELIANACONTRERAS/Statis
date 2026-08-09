@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trayectorias STATIS Dual</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f4f4f2;color:#1a1a1a}
+.wrap{max-width:1200px;margin:0 auto;padding:14px}
+h1{font-size:14px;font-weight:700;text-align:center;margin-bottom:2px}
+.sub{font-size:11px;color:#777;text-align:center;margin-bottom:10px}
+.topbar{background:#fff;border:1px solid #ddd;border-radius:8px;
+         padding:8px 12px;margin-bottom:8px;display:flex;gap:8px;
+         flex-wrap:wrap;align-items:center}
+.ctrl{font-size:11px;color:#555;font-weight:600;white-space:nowrap}
+.btns{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.pb{font-size:10px;padding:2px 8px;border:1px solid #ccc;border-radius:20px;
+     cursor:pointer;background:#fff;color:#555;white-space:nowrap}
+.pb:hover{background:#f0f0ee}
+.pb.on{color:#fff;border-color:transparent}
+.main{display:flex;gap:10px}
+.cvw{flex:1;background:#fff;border:1px solid #ddd;border-radius:8px;
+      padding:8px;min-width:0}
+canvas{display:block;width:100%}
+.dimx{font-size:10px;color:#888;text-align:center;margin-top:3px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.ab{font-size:11px;padding:4px 10px;border:1px solid #ccc;border-radius:6px;
+     cursor:pointer;background:#fff;color:#333}
+.ab:hover{background:#f0f0ee}
+.ab.blue{background:#185FA5;color:#fff;border-color:#185FA5}
+.ab.red{background:#E24B4A;color:#fff;border-color:#E24B4A}
+.yrbts{display:flex;gap:3px;flex-wrap:wrap;align-items:center}
+.yrlbl{font-size:10px;color:#555;font-weight:600}
+.yb{font-size:10px;padding:2px 6px;border:1px solid #ccc;border-radius:12px;
+     cursor:pointer;background:#fff;color:#555}
+.yb.on{background:#333;color:#fff;border-color:#333}
+.note{font-size:10px;color:#aaa;margin-top:6px;line-height:1.4}
+.side{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+.card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:10px}
+.ct{font-size:10px;font-weight:700;color:#aaa;letter-spacing:.06em;
+     text-transform:uppercase;margin-bottom:7px}
+.sn{font-size:15px;font-weight:700;margin-bottom:3px}
+.kv{display:flex;justify-content:space-between;font-size:11px;padding:2px 0}
+.kk{color:#888}.vv{font-weight:700}
+.vr{display:flex;justify-content:space-between;padding:2px 0;
+     border-bottom:1px solid #f2f2f2;font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>HJ-Biplot STATIS Dual &mdash; Trayectorias longitudinales</h1>
+<p class="sub">Lavit et al. (1994) &middot; Galindo Villard&oacute;n (1986) &middot;
+Dim1=39.78% &middot; Dim2=16.14%</p>
+
+<div class="topbar">
+  <span class="ctrl">Pa&iacute;s:</span>
+  <div class="btns" id="pbg"></div>
+</div>
+
+<div class="main">
+  <div class="cvw">
+    <canvas id="bp" role="img"></canvas>
+    <div class="dimx" id="dimx_lbl">Dim 1 &mdash; (39.78% varianza) &rarr;</div>
+    <div class="acts">
+      <button class="ab blue" onclick="clearSel()">Todos</button>
+      <button class="ab" id="vbtn" onclick="togV()">Vectores: ON</button>
+      <button class="ab" id="ybtn" onclick="togY()">A&ntilde;os: ON</button>
+      <div class="yrbts">
+        <span class="yrlbl">A&ntilde;os:</span>
+        <div id="yrbts"></div>
+      </div>
+    </div>
+    <p class="note">Clic en pa&iacute;s (barra superior o punto) para <b>agregar/quitar</b> de la comparaci&oacute;n (selecci&oacute;n m&uacute;ltiple, se mantiene activa).
+    Flechas &larr;&rarr; navegan un pa&iacute;s a la vez. Esc limpia toda la selecci&oacute;n.</p>
+  </div>
+
+  <div class="side">
+    <div class="card">
+      <div class="ct">Pa&iacute;ses seleccionados <span id="selcount" style="color:#aaa;font-weight:400"></span></div>
+      <div id="sellist"><div class="sn" id="sn">Todos</div></div>
+    </div>
+    <div class="card">
+      <div class="ct">Cargas vectoriales (Dim1 / Dim2)</div>
+      <div id="vtbl"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const LOAD=[{"name": "AR", "d1": 1.3322, "d2": 0.4449}, {"name": "ER", "d1": 0.5118, "d2": 0.9611}, {"name": "FSR", "d1": 0.4645, "d2": 0.8286}, {"name": "IRN", "d1": 1.2712, "d2": 0.1829}, {"name": "CPP", "d1": 0.6622, "d2": -0.9618}, {"name": "PPF", "d1": 1.2213, "d2": -0.2307}, {"name": "SWP", "d1": 0.3108, "d2": 0.2608}, {"name": "WI", "d1": 1.4497, "d2": -0.5963}];
+const CTRY={"Argentina": [{"yr": 2020, "d1": 0.1451, "d2": -7.2121}, {"yr": 2021, "d1": -2.7899, "d2": -2.2411}, {"yr": 2022, "d1": -0.7145, "d2": 0.3071}, {"yr": 2023, "d1": -0.7069, "d2": 1.3054}, {"yr": 2024, "d1": -1.442, "d2": 2.9224}, {"yr": 2025, "d1": 1.9939, "d2": 2.1366}, {"yr": 2026, "d1": 3.5142, "d2": 2.7817}], "Bolivia": [{"yr": 2020, "d1": -1.0144, "d2": 1.861}, {"yr": 2021, "d1": -1.3126, "d2": -1.7783}, {"yr": 2022, "d1": -1.196, "d2": 0.1526}, {"yr": 2023, "d1": -1.0845, "d2": -0.2499}, {"yr": 2024, "d1": 0.5234, "d2": 0.1694}, {"yr": 2025, "d1": 2.8167, "d2": -0.1706}, {"yr": 2026, "d1": 1.2674, "d2": 0.0158}], "Brazil": [{"yr": 2020, "d1": 2.6742, "d2": -1.8641}, {"yr": 2021, "d1": -1.9854, "d2": 1.8151}, {"yr": 2022, "d1": -0.4982, "d2": 1.9068}, {"yr": 2023, "d1": -1.4915, "d2": 0.2721}, {"yr": 2024, "d1": -1.3744, "d2": 0.4902}, {"yr": 2025, "d1": 3.2505, "d2": -1.9838}, {"yr": 2026, "d1": -0.5752, "d2": -0.6363}], "Chile": [{"yr": 2020, "d1": -2.4624, "d2": -2.9566}, {"yr": 2021, "d1": -5.3432, "d2": 1.0548}, {"yr": 2022, "d1": -1.6281, "d2": 1.7671}, {"yr": 2023, "d1": -0.8213, "d2": 0.7747}, {"yr": 2024, "d1": -0.1459, "d2": 0.8365}, {"yr": 2025, "d1": 4.4395, "d2": -1.2181}, {"yr": 2026, "d1": 5.9613, "d2": -0.2583}], "Colombia": [{"yr": 2020, "d1": -1.8541, "d2": -2.367}, {"yr": 2021, "d1": -4.2252, "d2": -0.0834}, {"yr": 2022, "d1": -0.0477, "d2": 1.6628}, {"yr": 2023, "d1": -0.2971, "d2": 1.1149}, {"yr": 2024, "d1": -0.6981, "d2": 1.5002}, {"yr": 2025, "d1": 3.3416, "d2": -0.6298}, {"yr": 2026, "d1": 3.7806, "d2": -1.1976}], "Costa Rica": [{"yr": 2020, "d1": -2.772, "d2": -7.3651}, {"yr": 2021, "d1": -1.1831, "d2": -0.771}, {"yr": 2022, "d1": -3.8468, "d2": -0.7248}, {"yr": 2023, "d1": -0.6546, "d2": 1.1232}, {"yr": 2024, "d1": -0.4329, "d2": 2.8437}, {"yr": 2025, "d1": 4.0814, "d2": 2.1227}, {"yr": 2026, "d1": 4.808, "d2": 2.7713}], "Cuba": [{"yr": 2020, "d1": 0.9595, "d2": 0.0115}, {"yr": 2021, "d1": -1.6896, "d2": 2.4414}, {"yr": 2022, "d1": 0.82, "d2": 1.8382}, {"yr": 2023, "d1": 0.5273, "d2": 1.5915}, {"yr": 2024, "d1": -2.0136, "d2": -2.3896}, {"yr": 2025, "d1": 0.0568, "d2": -1.9118}, {"yr": 2026, "d1": 1.3397, "d2": -1.5812}], "Dominican Rep.": [{"yr": 2020, "d1": -1.7872, "d2": 2.0076}, {"yr": 2021, "d1": -3.1011, "d2": 0.5801}, {"yr": 2022, "d1": 0.4378, "d2": 2.1705}, {"yr": 2023, "d1": 0.3317, "d2": 1.0929}, {"yr": 2024, "d1": 0.4436, "d2": -1.2001}, {"yr": 2025, "d1": 1.5101, "d2": -1.5971}, {"yr": 2026, "d1": 2.1652, "d2": -3.0539}], "Ecuador": [{"yr": 2020, "d1": 0.1773, "d2": -2.3021}, {"yr": 2021, "d1": -4.502, "d2": 0.7212}, {"yr": 2022, "d1": -1.0648, "d2": 2.648}, {"yr": 2023, "d1": -2.0105, "d2": 1.6398}, {"yr": 2024, "d1": -1.4489, "d2": -0.6121}, {"yr": 2025, "d1": 2.6895, "d2": -1.2114}, {"yr": 2026, "d1": 6.1593, "d2": -0.8834}], "El Salvador": [{"yr": 2020, "d1": -2.4476, "d2": 1.3258}, {"yr": 2021, "d1": -3.3521, "d2": -1.0185}, {"yr": 2022, "d1": 0.6416, "d2": -0.8122}, {"yr": 2023, "d1": 1.0524, "d2": -0.5118}, {"yr": 2024, "d1": 0.0912, "d2": -0.3611}, {"yr": 2025, "d1": 1.6434, "d2": 0.4055}, {"yr": 2026, "d1": 2.3711, "d2": 0.9722}], "Grenada": [{"yr": 2024, "d1": -2.3164, "d2": 3.0225}, {"yr": 2025, "d1": -0.1493, "d2": 0.3282}, {"yr": 2026, "d1": 2.4657, "d2": -3.3507}], "Guatemala": [{"yr": 2020, "d1": -3.4487, "d2": -10.3118}, {"yr": 2021, "d1": 3.7438, "d2": -9.6391}, {"yr": 2022, "d1": -0.9374, "d2": -1.2425}, {"yr": 2023, "d1": -1.5475, "d2": 1.6549}, {"yr": 2024, "d1": -2.1115, "d2": 2.5497}, {"yr": 2025, "d1": 1.3286, "d2": 7.1695}, {"yr": 2026, "d1": 2.9727, "d2": 9.8194}], "Guyana": [{"yr": 2024, "d1": -1.3692, "d2": 2.1002}, {"yr": 2025, "d1": -0.245, "d2": -1.9436}, {"yr": 2026, "d1": 1.6141, "d2": -0.1565}], "Honduras": [{"yr": 2020, "d1": -1.7187, "d2": -2.1624}, {"yr": 2021, "d1": -5.0287, "d2": -3.0492}, {"yr": 2022, "d1": -0.9499, "d2": 0.7236}, {"yr": 2023, "d1": -0.0544, "d2": 0.4789}, {"yr": 2024, "d1": -0.1304, "d2": -2.5366}, {"yr": 2025, "d1": 3.3643, "d2": 2.4298}, {"yr": 2026, "d1": 4.5177, "d2": 4.116}], "Jamaica": [{"yr": 2024, "d1": -3.5943, "d2": -0.1644}, {"yr": 2025, "d1": 2.5166, "d2": -1.2044}, {"yr": 2026, "d1": 1.0777, "d2": 1.3688}], "Mexico": [{"yr": 2020, "d1": 0.833, "d2": -3.2129}, {"yr": 2021, "d1": -3.6335, "d2": -0.5935}, {"yr": 2022, "d1": -0.4457, "d2": 1.752}, {"yr": 2023, "d1": -0.7178, "d2": 1.1961}, {"yr": 2024, "d1": -1.1008, "d2": 1.7357}, {"yr": 2025, "d1": 2.322, "d2": -0.1113}, {"yr": 2026, "d1": 2.7428, "d2": -0.7662}], "Nicaragua": [{"yr": 2020, "d1": -2.9802, "d2": 3.363}, {"yr": 2021, "d1": -2.2066, "d2": 1.5383}, {"yr": 2022, "d1": 1.7024, "d2": 1.2225}, {"yr": 2023, "d1": 1.9893, "d2": -4.2064}, {"yr": 2024, "d1": -0.4263, "d2": -0.2625}, {"yr": 2025, "d1": 0.9645, "d2": -1.7909}, {"yr": 2026, "d1": 0.9569, "d2": 0.136}], "Panama": [{"yr": 2020, "d1": -0.5441, "d2": 3.1521}, {"yr": 2021, "d1": -2.7337, "d2": 1.2605}, {"yr": 2022, "d1": 0.09, "d2": 2.1935}, {"yr": 2023, "d1": 0.1325, "d2": 0.5383}, {"yr": 2024, "d1": -0.6019, "d2": -0.9377}, {"yr": 2025, "d1": 1.6373, "d2": -2.5313}, {"yr": 2026, "d1": 2.02, "d2": -3.6753}], "Paraguay": [{"yr": 2020, "d1": -1.1823, "d2": -3.3653}, {"yr": 2021, "d1": -1.4697, "d2": -0.3963}, {"yr": 2022, "d1": 1.2685, "d2": 0.8012}, {"yr": 2023, "d1": 1.0337, "d2": 2.1789}, {"yr": 2024, "d1": -0.1084, "d2": 3.1911}, {"yr": 2025, "d1": 0.153, "d2": -0.5251}, {"yr": 2026, "d1": 0.3052, "d2": -1.8845}], "Peru": [{"yr": 2020, "d1": -3.0245, "d2": -4.5684}, {"yr": 2021, "d1": -5.3103, "d2": -1.3154}, {"yr": 2022, "d1": -0.534, "d2": 1.1946}, {"yr": 2023, "d1": -0.9844, "d2": 0.8239}, {"yr": 2024, "d1": -0.2124, "d2": 1.1913}, {"yr": 2025, "d1": 4.3256, "d2": 1.7619}, {"yr": 2026, "d1": 5.74, "d2": 0.9122}], "Puerto Rico": [{"yr": 2020, "d1": -1.9673, "d2": -5.0433}, {"yr": 2021, "d1": 1.1863, "d2": 0.9994}, {"yr": 2022, "d1": 2.2132, "d2": -0.3882}, {"yr": 2023, "d1": 0.7845, "d2": 0.1055}, {"yr": 2024, "d1": -0.101, "d2": 0.9206}, {"yr": 2025, "d1": -0.3498, "d2": 2.1886}, {"yr": 2026, "d1": -1.7659, "d2": 1.2175}], "Suriname": [{"yr": 2024, "d1": -3.6371, "d2": -4.7793}, {"yr": 2025, "d1": 0.8647, "d2": 2.9696}, {"yr": 2026, "d1": 2.7723, "d2": 1.8097}], "Uruguay": [{"yr": 2020, "d1": 0.7257, "d2": -4.2155}, {"yr": 2021, "d1": -2.5081, "d2": -1.0546}, {"yr": 2022, "d1": -1.459, "d2": -0.4911}, {"yr": 2023, "d1": -1.8644, "d2": -0.473}, {"yr": 2024, "d1": -2.1272, "d2": 1.027}, {"yr": 2025, "d1": 2.5243, "d2": 2.007}, {"yr": 2026, "d1": 4.7087, "d2": 3.2003}], "Venezuela": [{"yr": 2020, "d1": 1.4253, "d2": -5.9445}, {"yr": 2021, "d1": -0.2025, "d2": 0.1966}, {"yr": 2022, "d1": -0.5243, "d2": 0.6494}, {"yr": 2023, "d1": -1.5557, "d2": 0.2863}, {"yr": 2024, "d1": -2.4045, "d2": 0.9733}, {"yr": 2025, "d1": 0.9198, "d2": 2.1325}, {"yr": 2026, "d1": 2.3419, "d2": 1.7064}]};
+const NUNIV={"Argentina": {"2020": 43, "2021": 42, "2022": 43, "2023": 43, "2024": 43, "2025": 45, "2026": 45}, "Bolivia": {"2020": 5, "2021": 9, "2022": 12, "2023": 12, "2024": 8, "2025": 8, "2026": 11}, "Brazil": {"2020": 94, "2021": 94, "2022": 95, "2023": 98, "2024": 97, "2025": 96, "2026": 130}, "Chile": {"2020": 40, "2021": 41, "2022": 40, "2023": 40, "2024": 40, "2025": 41, "2026": 41}, "Colombia": {"2020": 57, "2021": 60, "2022": 61, "2023": 62, "2024": 61, "2025": 61, "2026": 67}, "Costa Rica": {"2020": 6, "2021": 5, "2022": 6, "2023": 5, "2024": 5, "2025": 5, "2026": 5}, "Cuba": {"2020": 7, "2021": 7, "2022": 6, "2023": 6, "2024": 7, "2025": 7, "2026": 6}, "Dominican Rep.": {"2020": 9, "2021": 10, "2022": 11, "2023": 11, "2024": 10, "2025": 10, "2026": 12}, "Ecuador": {"2020": 15, "2021": 17, "2022": 18, "2023": 22, "2024": 22, "2025": 23, "2026": 26}, "El Salvador": {"2020": 6, "2021": 6, "2022": 5, "2023": 5, "2024": 5, "2025": 7, "2026": 7}, "Grenada": {"2024": 1, "2025": 1, "2026": 1}, "Guatemala": {"2020": 4, "2021": 2, "2022": 3, "2023": 4, "2024": 4, "2025": 5, "2026": 5}, "Guyana": {"2024": 1, "2025": 1, "2026": 1}, "Honduras": {"2020": 3, "2021": 4, "2022": 4, "2023": 4, "2024": 5, "2025": 4, "2026": 4}, "Jamaica": {"2024": 2, "2025": 2, "2026": 2}, "Mexico": {"2020": 59, "2021": 66, "2022": 64, "2023": 64, "2024": 63, "2025": 63, "2026": 67}, "Nicaragua": {"2020": 3, "2021": 2, "2022": 2, "2023": 2, "2024": 2, "2025": 2, "2026": 2}, "Panama": {"2020": 7, "2021": 6, "2022": 7, "2023": 7, "2024": 7, "2025": 7, "2026": 7}, "Paraguay": {"2020": 5, "2021": 5, "2022": 5, "2023": 5, "2024": 5, "2025": 7, "2026": 7}, "Peru": {"2020": 20, "2021": 20, "2022": 20, "2023": 22, "2024": 24, "2025": 24, "2026": 26}, "Puerto Rico": {"2020": 4, "2021": 3, "2022": 3, "2023": 3, "2024": 3, "2025": 4, "2026": 5}, "Suriname": {"2024": 1, "2025": 1, "2026": 1}, "Trinidad and Tobago": {"2024": 1, "2026": 2}, "Uruguay": {"2020": 4, "2021": 4, "2022": 4, "2023": 4, "2024": 4, "2025": 4, "2026": 4}, "Venezuela": {"2020": 9, "2021": 8, "2022": 9, "2023": 9, "2024": 9, "2025": 9, "2026": 9}};
+const AKV={"Argentina": "0.04416", "Bolivia": "0.04951", "Brazil": "0.03889", "Chile": "0.05343", "Colombia": "0.05930", "Costa Rica": "0.05375", "Cuba": "0.03360", "Dominican Rep.": "0.04660", "Ecuador": "0.05102", "El Salvador": "0.04540", "Grenada": "0.03655", "Guatemala": "0.03550", "Guyana": "0.03249", "Honduras": "0.04845", "Jamaica": "0.02852", "Mexico": "0.05372", "Nicaragua": "0.03211", "Panama": "0.03610", "Paraguay": "0.02924", "Peru": "0.05141", "Puerto Rico": "0.03046", "Suriname": "0.02547", "Uruguay": "0.04159", "Venezuela": "0.04273"};
+const RKV={"Argentina": "11/24", "Bolivia": "7/24", "Brazil": "14/24", "Chile": "4/24", "Colombia": "1/24", "Costa Rica": "2/24", "Cuba": "18/24", "Dominican Rep.": "9/24", "Ecuador": "6/24", "El Salvador": "10/24", "Grenada": "15/24", "Guatemala": "17/24", "Guyana": "19/24", "Honduras": "8/24", "Jamaica": "23/24", "Mexico": "3/24", "Nicaragua": "20/24", "Panama": "16/24", "Paraguay": "22/24", "Peru": "5/24", "Puerto Rico": "21/24", "Suriname": "24/24", "Uruguay": "13/24", "Venezuela": "12/24"};
+const COL={"Argentina": "#E63946", "Bolivia": "#1D3557", "Brazil": "#2A9D8F", "Chile": "#E9C46A", "Colombia": "#6A4C93", "Costa Rica": "#F4A261", "Cuba": "#264653", "Dominican Rep.": "#457B9D", "Ecuador": "#C1121F", "El Salvador": "#2D6A4F", "Grenada": "#8338EC", "Guatemala": "#FB5607", "Guyana": "#3A86FF", "Honduras": "#FFBE0B", "Jamaica": "#06D6A0", "Mexico": "#118AB2", "Nicaragua": "#073B4C", "Panama": "#EF233C", "Paraguay": "#4CC9F0", "Peru": "#F72585", "Puerto Rico": "#7209B7", "Suriname": "#560BAD", "Uruguay": "#480CA8", "Venezuela": "#3A0CA3"};
+const VS=4.7363;
+const YEARS=[2020, 2021, 2022, 2023, 2024, 2025, 2026];
+const D1_PCT="39.78";
+const D2_PCT="16.14";
+
+let selSet=new Set(),showV=true,showY=true;
+let actYrs=new Set(YEARS.map(String));
+
+// Chips de países — clic ACUMULA selección (permite comparar varios países a la vez)
+const pbg=document.getElementById('pbg');
+Object.keys(CTRY).forEach(name=>{
+  const b=document.createElement('button');
+  b.className='pb';b.textContent=name;b.dataset.n=name;
+  b.onclick=()=>toggleSel(name);
+  pbg.appendChild(b);
+});
+
+// Botones de años
+const yrbts=document.getElementById('yrbts');
+YEARS.forEach(a=>{
+  const b=document.createElement('button');
+  b.className='yb on';b.textContent=a;b.dataset.y=String(a);
+  b.onclick=()=>{
+    const k=String(a);
+    actYrs.has(k)?actYrs.delete(k):actYrs.add(k);
+    b.classList.toggle('on',actYrs.has(k));draw();
+  };
+  yrbts.appendChild(b);
+});
+
+// Tabla de cargas vectoriales
+const vtbl=document.getElementById('vtbl');
+const hdr=document.createElement('div');hdr.className='vr';
+hdr.innerHTML='<span style="font-weight:700;width:36px">Ind.</span><span style="color:#185FA5;font-weight:700">Dim1</span><span style="color:#534AB7;font-weight:700">Dim2</span>';
+vtbl.appendChild(hdr);
+LOAD.forEach(l=>{
+  const r=document.createElement('div');r.className='vr';
+  r.innerHTML='<span style="font-weight:700;width:36px">'+l.name+'</span><span style="color:#185FA5">'+(l.d1>=0?'+':'')+l.d1.toFixed(4)+'</span><span style="color:#534AB7">'+(l.d2>=0?'+':'')+l.d2.toFixed(4)+'</span>';
+  vtbl.appendChild(r);
+});
+
+// Canvas
+const cv=document.getElementById('bp');
+const ctx=cv.getContext('2d');
+const PAD={l:50,r:20,t:20,b:36};
+
+function allR(){
+  let xs=[],ys=[];
+  Object.values(CTRY).forEach(a=>a.forEach(p=>{xs.push(p.d1);ys.push(p.d2)}));
+  LOAD.forEach(l=>{xs.push(l.d1*VS);ys.push(l.d2*VS)});
+  return{xs,ys};
+}
+const {xs,ys}=allR();
+const PF=0.7;
+const xMn=Math.min(...xs)-PF,xMx=Math.max(...xs)+PF;
+const yMn=Math.min(...ys)-PF,yMx=Math.max(...ys)+PF;
+
+function gx(v){return PAD.l+(v-xMn)/(xMx-xMn)*(cv.width-PAD.l-PAD.r)}
+function gy(v){return cv.height-PAD.b-(v-yMn)/(yMx-yMn)*(cv.height-PAD.t-PAD.b)}
+function resize(){
+  const W=cv.parentElement.clientWidth-20,H=Math.round(W*0.70);
+  cv.width=W;cv.height=H;cv.style.height=H+'px';draw();
+}
+
+function draw(){
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  // Grid
+  ctx.strokeStyle='rgba(0,0,0,0.055)';ctx.lineWidth=0.5;
+  for(let x=Math.ceil(xMn);x<=Math.floor(xMx);x++){ctx.beginPath();ctx.moveTo(gx(x),PAD.t);ctx.lineTo(gx(x),H-PAD.b);ctx.stroke()}
+  for(let y=Math.ceil(yMn);y<=Math.floor(yMx);y++){ctx.beginPath();ctx.moveTo(PAD.l,gy(y));ctx.lineTo(W-PAD.r,gy(y));ctx.stroke()}
+  // Ejes
+  const ox=gx(0),oy=gy(0);
+  ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PAD.l,oy);ctx.lineTo(W-PAD.r,oy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ox,PAD.t);ctx.lineTo(ox,H-PAD.b);ctx.stroke();
+  // Ticks
+  ctx.fillStyle='#999';ctx.font='10px Arial';ctx.textAlign='center';ctx.textBaseline='top';
+  for(let x=Math.ceil(xMn);x<=Math.floor(xMx);x++){if(x===0)continue;ctx.fillText(x,gx(x),oy+3)}
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let y=Math.ceil(yMn);y<=Math.floor(yMx);y++){if(y===0)continue;ctx.fillText(y,ox-4,gy(y))}
+  // Etiqueta Dim2
+  ctx.save();ctx.fillStyle='#666';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.translate(13,H/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText('Dim 2 ('+D2_PCT+'%)',0,0);ctx.restore();
+  // Etiqueta Dim1
+  ctx.fillStyle='#666';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillText('Dim 1 ('+D1_PCT+'%)',W/2,H-PAD.b+18);
+
+  // Vectores
+  if(showV){
+    LOAD.forEach(l=>{
+      const vx=gx(l.d1*VS),vy=gy(l.d2*VS);
+      ctx.strokeStyle='#111';ctx.lineWidth=1.8;ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(vx,vy);ctx.stroke();
+      const ang=Math.atan2(vy-oy,vx-ox),al=9;
+      ctx.fillStyle='#111';ctx.beginPath();ctx.moveTo(vx,vy);
+      ctx.lineTo(vx-al*Math.cos(ang-0.38),vy-al*Math.sin(ang-0.38));
+      ctx.lineTo(vx-al*Math.cos(ang+0.38),vy-al*Math.sin(ang+0.38));
+      ctx.closePath();ctx.fill();
+      const lx=gx(l.d1*VS*1.08),ly=gy(l.d2*VS*1.08);
+      ctx.fillStyle='#111';ctx.font='bold 12px Arial';
+      ctx.textAlign=l.d1>=0?'left':'right';ctx.textBaseline='middle';
+      ctx.fillText(l.name,lx+(l.d1>=0?3:-3),ly);
+    });
+  }
+
+  // Trayectorias
+  Object.keys(CTRY).forEach(name=>{
+    const pts=CTRY[name].filter(p=>actYrs.has(String(p.yr)));
+    if(!pts.length)return;
+    const col=COL[name]||'#888';
+    const isSel=selSet.has(name),anyS=selSet.size>0,dim=anyS&&!isSel;
+    ctx.globalAlpha=dim?0.08:1;
+    if(pts.length>1){
+      ctx.strokeStyle=col;ctx.lineWidth=isSel?2.8:1.1;
+      ctx.setLineDash(isSel?[]:[3,2.5]);
+      ctx.beginPath();pts.forEach((p,i)=>{i===0?ctx.moveTo(gx(p.d1),gy(p.d2)):ctx.lineTo(gx(p.d1),gy(p.d2))});ctx.stroke();
+      ctx.setLineDash([]);
+      if(isSel){
+        const lp=pts[pts.length-1],pp=pts[pts.length-2];
+        const ax=gx(lp.d1),ay=gy(lp.d2),bx=gx(pp.d1),by=gy(pp.d2);
+        const ang=Math.atan2(ay-by,ax-bx),al=10;
+        ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(ax,ay);
+        ctx.lineTo(ax-al*Math.cos(ang-0.38),ay-al*Math.sin(ang-0.38));
+        ctx.lineTo(ax-al*Math.cos(ang+0.38),ay-al*Math.sin(ang+0.38));
+        ctx.closePath();ctx.fill();
+      }
+    }
+    pts.forEach(p=>{
+      const ppx=gx(p.d1),ppy=gy(p.d2),r=isSel?5.5:3.5;
+      ctx.beginPath();ctx.arc(ppx,ppy,r,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+      if(isSel){ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke()}
+      if(showY&&isSel){
+        ctx.fillStyle='#111';ctx.font='bold 10px Arial';
+        ctx.textAlign='left';ctx.textBaseline='bottom';
+        ctx.fillText(p.yr,ppx+7,ppy-1);
+      }
+    });
+    if(!dim){
+      const ap=pts;
+      const cd1=ap.reduce((a,p)=>a+p.d1,0)/ap.length;
+      const cd2=ap.reduce((a,p)=>a+p.d2,0)/ap.length;
+      ctx.font=(isSel?'bold 13px':'10px')+' Arial';
+      ctx.fillStyle=col;ctx.textBaseline='middle';
+      ctx.textAlign=cd1>=0?'left':'right';
+      ctx.fillText(name,cd1>=0?gx(cd1)+6:gx(cd1)-6,gy(cd2));
+    }
+    ctx.globalAlpha=1;
+  });
+  ctx.textBaseline='alphabetic';
+}
+
+function toggleSel(name){
+  selSet.has(name)?selSet.delete(name):selSet.add(name);
+  refreshSel();
+}
+function clearSel(){
+  selSet.clear();
+  refreshSel();
+}
+function refreshSel(){
+  document.querySelectorAll('.pb').forEach(b=>{
+    if(selSet.has(b.dataset.n)){b.classList.add('on');b.style.background=COL[b.dataset.n]||'#888'}
+    else{b.classList.remove('on');b.style.background=''}
+  });
+  renderSelList();
+  draw();
+}
+function renderSelList(){
+  const box=document.getElementById('sellist');
+  const cnt=document.getElementById('selcount');
+  if(selSet.size===0){
+    cnt.textContent='';
+    box.innerHTML='<div class="sn" id="sn">Todos</div>';
+    return;
+  }
+  cnt.textContent='('+selSet.size+')';
+  box.innerHTML='';
+  selSet.forEach(name=>{
+    const pts=CTRY[name];
+    const d1s=pts.map(p=>p.d1),d2s=pts.map(p=>p.d2);
+    const last=pts[pts.length-1];
+    const amp1=(Math.max(...d1s)-Math.min(...d1s)).toFixed(3);
+    const amp2=(Math.max(...d2s)-Math.min(...d2s)).toFixed(3);
+    const nuniv=NUNIV[name]||{};
+    const nvals=Object.values(nuniv);
+    const nRango=nvals.length?(Math.min(...nvals)+'–'+Math.max(...nvals)):'—';
+    const row=document.createElement('div');
+    row.style.marginBottom='8px';row.style.paddingBottom='8px';
+    row.style.borderBottom='1px solid #f2f2f2';
+    const head=document.createElement('div');
+    head.className='sn';head.style.color=COL[name]||'#1a1a1a';
+    head.textContent=name;
+    const rm=document.createElement('span');
+    rm.textContent=' ×';
+    rm.style.cssText='font-size:11px;font-weight:400;color:#888;cursor:pointer';
+    rm.title='Quitar de la comparación';
+    rm.addEventListener('click',()=>toggleSel(name));
+    head.appendChild(rm);
+    row.appendChild(head);
+    const campos=[
+      ['αk', AKV[name]||'—'],
+      ['Rango', RKV[name]||'—'],
+      ['Última pos. (Dim1, Dim2)', last.d1.toFixed(3)+', '+last.d2.toFixed(3)],
+      ['Amplitud Dim1', amp1],
+      ['Amplitud Dim2', amp2],
+      ['Ediciones', String(pts.length)],
+      ['N° universidades (rango)', nRango],
+    ];
+    campos.forEach(par=>{
+      const kk_txt=par[0], vv_txt=par[1];
+      const kv=document.createElement('div');kv.className='kv';
+      const kk=document.createElement('span');kk.className='kk';kk.textContent=kk_txt;
+      const vv=document.createElement('span');vv.className='vv';vv.textContent=vv_txt;
+      kv.appendChild(kk);kv.appendChild(vv);
+      row.appendChild(kv);
+    });
+    box.appendChild(row);
+  });
+}
+
+function togV(){showV=!showV;document.getElementById('vbtn').textContent='Vectores: '+(showV?'ON':'OFF');draw()}
+function togY(){showY=!showY;document.getElementById('ybtn').textContent='Años: '+(showY?'ON':'OFF');draw()}
+
+cv.addEventListener('click',e=>{
+  const rect=cv.getBoundingClientRect(),scX=cv.width/rect.width,scY=cv.height/rect.height;
+  const mx=(e.clientX-rect.left)*scX,my=(e.clientY-rect.top)*scY;
+  let best=null,bestD=1e9;
+  Object.keys(CTRY).forEach(name=>{
+    CTRY[name].filter(p=>actYrs.has(String(p.yr))).forEach(p=>{
+      const dx=gx(p.d1)-mx,dy=gy(p.d2)-my,d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=name}
+    });
+  });
+  if(Math.sqrt(bestD)<22)toggleSel(best);
+});
+
+const cnames=Object.keys(CTRY);
+let navIdx=-1;
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){clearSel();navIdx=-1;return}
+  if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;
+  navIdx=navIdx===-1?0:(e.key==='ArrowRight'?(navIdx+1)%cnames.length:(navIdx-1+cnames.length)%cnames.length);
+  selSet=new Set([cnames[navIdx]]);
+  refreshSel();
+});
+
+resize();
+window.addEventListener('resize',()=>{clearTimeout(window._rt);window._rt=setTimeout(resize,150)});
+</script>
+</body>
+</html>
