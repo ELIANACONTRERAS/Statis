@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Si utiliza NekaStat, cítelo como se indica a continuación."
+type: software
+title: "NekaStat: N-way Exploratory K-table Analysis for Statistics"
+version: "3.8"
+date-released: "2026-11-02"
+license: MIT
+repository-code: "https://github.com/ELIANACONTRERAS/Statis"
+authors:
+  - family-names: "Contreras Jordán"
+    given-names: "Eliana"
+    affiliation: "Universidad de Guayaquil"
+keywords:
+  - análisis multivariante
+  - STATIS Dual
+  - HJ-Biplot
+  - tablas múltiples
