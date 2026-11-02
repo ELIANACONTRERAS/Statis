@@ -32,7 +32,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-latest   # Apple Silicon (M1, M2, M3, M4)
+          - runner: macos-15       # Apple Silicon (M1, M2, M3, M4)
             arch: AppleSilicon
           - runner: macos-15-intel # Intel (macos-13 fue retirado por GitHub en dic. 2025)
             arch: Intel
@@ -55,6 +55,9 @@ jobs:
   publicar:
     # Publica los instaladores en la página de descargas (Releases) del repositorio
     needs: [windows, macos]
+    # Publica aunque falle algún Mac (p. ej., por falta de máquinas Apple Silicon en GitHub);
+    # el instalador Intel también funciona en Mac con chip Apple mediante Rosetta 2.
+    if: ${{ !cancelled() && needs.windows.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
