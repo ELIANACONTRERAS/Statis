@@ -34,7 +34,7 @@ jobs:
         include:
           - runner: macos-latest   # Apple Silicon (M1, M2, M3, M4)
             arch: AppleSilicon
-          - runner: macos-13       # Intel
+          - runner: macos-15-intel # Intel (macos-13 fue retirado por GitHub en dic. 2025)
             arch: Intel
     runs-on: ${{ matrix.runner }}
     steps:
@@ -52,3 +52,28 @@ jobs:
         with:
           name: NekaStat-Mac-${{ matrix.arch }}
           path: NekaStat/instalador/macos/salida/*
+  publicar:
+    # Publica los instaladores en la página de descargas (Releases) del repositorio
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: salida
+          merge-multiple: true
+      - name: Crear o actualizar la versión NekaStat v3.8
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la salida
+          NOTAS="Instaladores de NekaStat v3.8 (no requieren Python). Windows: NekaStat_v3.8_Instalador_Windows.exe. Mac con chip M1-M4: archivos AppleSilicon. Mac con procesador Intel: archivos Intel. El .pkg instala en Aplicaciones y crea el acceso directo en el Escritorio. Guía completa: NekaStat/INSTALACION.md"
+          if gh release view nekastat-v3.8 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload nekastat-v3.8 salida/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create nekastat-v3.8 salida/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "NekaStat v3.8" --notes "$NOTAS"
+          fi
