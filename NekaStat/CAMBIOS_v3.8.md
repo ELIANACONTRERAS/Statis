@@ -56,6 +56,14 @@ Archivos modificados:
 - Resumen_Global: "Tipo de biplot", "Versión del cálculo" y fórmula del cos².
 - Coords: encabezado con la fórmula aplicada.
 
+## Algoritmos propios (sin funciones de paquetes estadísticos)
+- STATIS Dual (modo longitudinal) usa solo el algoritmo propio de descomposición espectral
+  (iteración QR, m3_blocks.manual_eigen_symmetric) y operaciones elementales de NumPy.
+- Gráfico de la interestructura (G08): np.linalg.eigh reemplazado por el algoritmo propio
+  (mismas coordenadas, diferencia < 1e-14).
+- Distancia al compromiso en las trayectorias de variables: fórmula explícita.
+- np.linalg.eigh se mantiene solo en el modo bloques (S de n×n).
+
 ## Sin cambios
 alpha_k, RV, valores propios, inercia, cargas U·sqrt(lambda), intraestructura, cos² respecto del consenso, modo bloques.
 

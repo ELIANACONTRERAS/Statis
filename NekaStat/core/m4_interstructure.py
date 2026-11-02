@@ -15,7 +15,8 @@ Pipeline (fases del script validado):
   F7.  Matriz RV (K×K)
   F8.  αk = primer eigenvector de RV, orientado + , normalizado Σ=1
   F9.  S = Σ αk·Vk             compromiso (p×p)
-  F10. eigh(S) → λ, U          filtrar λ > 1e-10
+  F10. Eigendescomposición de S con el algoritmo propio (iteración QR;
+       np.linalg.eigh solo en modo bloques, donde S es n×n) → λ, U, λ > 1e-10
   F11. Coordenadas de las filas según el tipo de biplot elegido:
          "HJ" (por defecto): HJ-Biplot del compromiso (Galindo-Villardón, 1986)
                Fk = √(αk / (Tk·‖Vk‖F)) · Xk @ U
@@ -527,7 +528,8 @@ def run_interstructure(blocks: BlocksResult,
                 fila = {"tabla": t, "variable": vname}
                 for d in range(n_dims):
                     fila[f"Dim{d+1}"] = float(Gk[j, d])
-                fila["dist_compromiso"] = float(np.linalg.norm(Gk[j, :] - L_comp[j, :]))
+                dif = Gk[j, :] - L_comp[j, :]
+                fila["dist_compromiso"] = float(np.sqrt(np.sum(dif * dif)))   # distancia euclídea explícita
                 filas_vt.append(fila)
         res.var_traj = pd.DataFrame(filas_vt)
 

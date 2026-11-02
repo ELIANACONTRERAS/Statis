@@ -1066,11 +1066,9 @@ def plot_interstructure_rv(statis: StatisDualResult) -> plt.Figure:
     ve     = statis.variance_explained
 
     # Eigendescomposición de RV para obtener coordenadas en el espacio interestructura
-    # Eigendescomposición con numpy (no scipy) — ordenada descendente
-    vals_np, vecs_np = np.linalg.eigh(RV)
-    idx_sort = np.argsort(vals_np)[::-1]
-    vals_rv  = vals_np[idx_sort]
-    vecs_rv  = vecs_np[:, idx_sort]
+    # Eigendescomposición con el algoritmo propio (iteración QR, m3_blocks),
+    # el mismo que calcula los pesos αk; ordenada descendente.
+    vals_rv, vecs_rv = manual_eigen_symmetric(RV)
 
     # Coordenadas de cada tabla en Dim1/Dim2 del espacio RV
     # = primeras 2 columnas de eigenvectores escalados por sqrt(eigenvalor)
