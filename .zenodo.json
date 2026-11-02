@@ -1,0 +1,32 @@
+{
+  "title": "NekaStat: N-way Exploratory K-table Analysis for Statistics",
+  "version": "3.8",
+  "upload_type": "software",
+  "publication_date": "2026-11-02",
+  "description": "<p>NekaStat es un software de análisis multivariante de tablas múltiples (K-tablas) con interfaz gráfica. Implementa STATIS Dual (Lavit et al., 1994) para paneles longitudinales no balanceados, con trayectorias de las observaciones en el HJ-Biplot del compromiso (Galindo-Villardón, 1986) o en el GH-Biplot (Gabriel, 1971), trayectorias de las variables, interestructura (coeficiente RV y pesos αk), intraestructura y calidad de representación (cos²) en coordenadas principales. Exporta las fórmulas aplicadas y una hoja de verificación de los cálculos.</p><p>Versión 3.8: instaladores para Windows y macOS.</p>",
+  "creators": [
+    {
+      "name": "Contreras Jordán, Eliana",
+      "affiliation": "Universidad de Guayaquil",
+      "orcid": "0000-0003-2435-6151"
+    }
+  ],
+  "license": "MIT",
+  "language": "spa",
+  "keywords": [
+    "análisis multivariante",
+    "STATIS Dual",
+    "HJ-Biplot",
+    "biplot",
+    "tablas múltiples",
+    "K-tablas",
+    "datos longitudinales",
+    "coeficiente RV",
+    "software estadístico"
+  ],
+  "references": [
+    "Lavit, C., Escoufier, Y., Sabatier, R., & Traissac, P. (1994). The ACT (STATIS method). Computational Statistics & Data Analysis, 18(1), 97-119. https://doi.org/10.1016/0167-9473(94)90134-1",
+    "Galindo-Villardón, M. P. (1986). Una alternativa de representación simultánea: HJ-Biplot. Qüestiió, 10(1), 13-23.",
+    "Gabriel, K. R. (1971). The biplot graphic display of matrices with application to principal component analysis. Biometrika, 58(3), 453-467. https://doi.org/10.1093/biomet/58.3.453"
+  ]
+}

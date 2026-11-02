@@ -1,0 +1,27 @@
+NekaStat v3.8 — N-way Exploratory K-table Analysis for Statistics
+Autora: Eliana Contreras Jordán
+
+INSTALACIÓN RÁPIDA (crea el ícono en el escritorio)
+  No hace falta tener Python: si falta, el instalador lo descarga e instala (requiere internet).
+  Windows: doble clic en  Instalar_NekaStat_Windows.bat
+  Mac:     clic derecho en Instalar_NekaStat_Mac.command -> Abrir
+  Detalles en INSTALACION.md
+
+EJECUTAR SIN INSTALAR (desde una terminal en esta carpeta)
+  Windows:  python main.py
+  Mac:      python3 main.py
+
+ESTRUCTURA
+  main.py          Punto de entrada
+  ui_main.py       Interfaz (ventana principal)
+  core/            Cálculo: carga, preprocesamiento, STATIS Dual, biplot, exportación
+  assets/          Logo e ícono de la aplicación
+  CAMBIOS_v3.8.md  Cambios respecto de la v3.7d
+
+INSTALADORES PARA WINDOWS Y MAC (con acceso directo en el escritorio)
+  Vea INSTALACION.md. Archivos en instalador/ y .github/workflows/.
+
+REFERENCIAS DEL MÉTODO
+  Lavit, Escoufier, Sabatier y Traissac (1994). Computational Statistics & Data Analysis, 18(1), 97-119.
+  Galindo-Villardón (1986). Qüestiió, 10(1), 13-23.
+  Gabriel (1971). Biometrika, 58(3), 453-467.

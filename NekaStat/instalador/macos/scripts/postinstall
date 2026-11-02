@@ -1,0 +1,12 @@
+#!/bin/bash
+# Se ejecuta al terminar el instalador .pkg: crea el acceso directo en el
+# Escritorio del usuario que tiene la sesión abierta.
+USUARIO=$(stat -f%Su /dev/console)
+ESCRITORIO="/Users/${USUARIO}/Desktop"
+if [ -d "$ESCRITORIO" ]; then
+    ln -sfn "/Applications/NekaStat.app" "${ESCRITORIO}/NekaStat"
+    chown -h "${USUARIO}" "${ESCRITORIO}/NekaStat"
+fi
+# Quita la marca de cuarentena para que macOS no bloquee la primera apertura
+xattr -dr com.apple.quarantine "/Applications/NekaStat.app" 2>/dev/null || true
+exit 0

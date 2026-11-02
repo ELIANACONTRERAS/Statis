@@ -1,0 +1,82 @@
+# Construye los instaladores de NekaStat (carpeta NekaStat/) para Windows y macOS.
+# Se ejecuta al subir cambios en NekaStat/ o a mano desde la pestaña "Actions".
+name: NekaStat - construir instaladores
+on:
+  workflow_dispatch:
+  push:
+    paths: ['NekaStat/**', '.github/workflows/nekastat_instaladores.yml']
+defaults:
+  run:
+    working-directory: NekaStat
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Dependencias
+        run: pip install -r requirements.txt pyinstaller
+      - name: Compilar
+        run: pyinstaller instalador/NekaStat.spec --noconfirm
+      - name: Instalador (Inno Setup)
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" instalador\windows\NekaStat_instalador.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NekaStat-Windows
+          path: NekaStat/instalador/windows/salida/*.exe
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15       # Apple Silicon (M1, M2, M3, M4)
+            arch: AppleSilicon
+          - runner: macos-15-intel # Intel (macos-13 fue retirado por GitHub en dic. 2025)
+            arch: Intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Construir .app, .pkg y .dmg
+        run: bash instalador/macos/construir_macos.sh
+      - name: Renombrar según arquitectura
+        run: |
+          cd instalador/macos/salida
+          mv NekaStat_v3.8_Instalador_Mac.pkg NekaStat_v3.8_Instalador_Mac_${{ matrix.arch }}.pkg
+          mv NekaStat_v3.8_Mac.dmg NekaStat_v3.8_Mac_${{ matrix.arch }}.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NekaStat-Mac-${{ matrix.arch }}
+          path: NekaStat/instalador/macos/salida/*
+  publicar:
+    # Publica los instaladores en la página de descargas (Releases) del repositorio
+    needs: [windows, macos]
+    # Publica aunque falle algún Mac (p. ej., por falta de máquinas Apple Silicon en GitHub);
+    # el instalador Intel también funciona en Mac con chip Apple mediante Rosetta 2.
+    if: ${{ !cancelled() && needs.windows.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: salida
+          merge-multiple: true
+      - name: Crear o actualizar la versión NekaStat v3.8
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la salida
+          NOTAS="Instaladores de NekaStat v3.8 (no requieren Python). Windows: NekaStat_v3.8_Instalador_Windows.exe. Mac con chip M1-M4: archivos AppleSilicon. Mac con procesador Intel: archivos Intel. El .pkg instala en Aplicaciones y crea el acceso directo en el Escritorio. Guía completa: NekaStat/INSTALACION.md"
+          if gh release view nekastat-v3.8 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload nekastat-v3.8 salida/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create nekastat-v3.8 salida/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "NekaStat v3.8" --notes "$NOTAS"
+          fi
